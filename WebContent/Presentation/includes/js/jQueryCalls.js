@@ -72,13 +72,15 @@ function xoPlacement(selectedFieldObject)
 		
 	var cellValue = selectedFieldObject.text();
 	
-	if(cellValue == "")
+	if(cellValue.length == 0)
 	{
 		resetMsg(); //clear the ai messages
 		
 		setGridTextVal(selectedFieldObject, playerChar); //place odd move's (1, 3, 5...) before even
 		
 		aiMove(selectedFieldObject);//determine AI's move
+		
+		isDraw(); //check if draw
 		
 	}//end if(cellText == "")
 	else
@@ -109,7 +111,7 @@ function setGridTextVal(selectedFieldObject, xORo)
 function aiMove(selectedFieldObject)
 {	
 	var humanMoves = jQuery("#mainGrid > td[id^="+gridSqaureIDName+"]:contains('"+playerChar+"')").length;
-		
+	
 	//AI take center square if available and only 1 human value is on the board
 	if( (jQuery("#"+gridSqaureIDName+"4").text() == "") && (humanMoves == 1) )
 	{
@@ -123,69 +125,90 @@ function aiMove(selectedFieldObject)
 	else if(humanMoves > 1)
 	{	
 		var winORblock = canWin(aiChar, playerChar, "AI");
+			
 		if(winORblock == -1)
-			{winORblock = canLose(aiChar, playerChar, "AI");} //throw the block
+		{
+			winORblock = canLose_or_Open(aiChar, playerChar, "AI");
+		} //throw the block
 		
-		setGridTextVal(jQuery("#"+gridSqaureIDName+winORblock), aiChar); //set grid value		
+		setGridTextVal(jQuery("#"+gridSqaureIDName+winORblock), aiChar); //set grid value
 	}//end else if(humanMoves > 1)
-	
 			
 }//end aiMove(selectedField)
 
-function canWin(charToCheck, blocker, player)
-{//check if all possible value could win before checking to lose [block]
-	var winblockValue = -1; //-1 is false
+function isDraw()
+{//checks if there is a draw
+	var mergedComb = "";
+	mergedComb = mergedComb.concat.apply(mergedComb, winningCombinations); //merge multi-arry for more efficient search
+	
+	var regExp = new RegExp("[0-9]","g");
+	var matchInts = mergedComb.toString().match(regExp); 
+	
+//alert(matchInts);
+	
+}
+
+function countChar(charToCount, winnCommArr)
+{
+	var count = 0;
 	
 	for(var a=0; a < winningCombinations.length; a++)
 	{	
-		var countCharToCheck = winningCombinations[a].reduce(function(n, val) 
-				{
-		    return n + (val === charToCheck);
-				}, 0
-		);
 		
-		var countBlocker = winningCombinations[a].reduce(function(n, val) 
+		count = winnCommArr.reduce(function(n, val) 
 				{
-		    return n + (val === blocker);
+		    return n + (val === charToCount);
 				}, 0
 		);
+	}//end for
+		
+	return count;
+}//end countChar
 
-		if( (countCharToCheck == 2) && (countBlocker == 0) )
-		{//true: beat player			
-			setBottomMessage("I win! Try your luck again?");
-			winblockValue = getWinBlockValue(charToCheck, winningCombinations[a]);
-			break; //stop loop
-		}//end if( (countCharToCheck == 2) && (countBlocker == 0) )
-	}//for(var a=0; a < winningCombinations.length; a++)
-	
-	return winblockValue;
-}//end canWin(charToCheck, blocker, player)
-
-function canLose(charToCheck, blocker, player)
+function canWin(charToCheck, blocker, player)
 {
 	var winblockValue = -1; //-1 is false
 	
 	for(var a=0; a < winningCombinations.length; a++)
 	{	
-		var countCharToCheck = winningCombinations[a].reduce(function(n, val) 
-				{
-		    return n + (val === charToCheck);
-				}, 0
-		);
 		
-		var countBlocker = winningCombinations[a].reduce(function(n, val) 
-				{
-		    return n + (val === blocker);
-				}, 0
-		);
+		var countCharToCheck = countChar(charToCheck, winningCombinations[a]);
+		var countBlocker = countChar(blocker, winningCombinations[a]);
 
-		if( (countCharToCheck == 0) && (countBlocker == 2) )
-		{//true: block player				
-			winblockValue = getWinBlockValue(blocker, winningCombinations[a]);
-			break; //stop loop
-		}//end else if( (countCharToCheck == 0) && (countBlocker == 2) )	
-						
+		if( (countCharToCheck == 2) && (countBlocker == 0) )
+		{//true: beat player			
+			setBottomMessage("I win! Try your luck again?");
+			return winblockValue = getWinBlockValue(charToCheck, winningCombinations[a]);
+			
+		}//end if( (countCharToCheck == 2) && (countBlocker == 0) )
+		
+		
 	}//for(var a=0; a < winningCombinations.length; a++)
+	
+	return winblockValue;
+}//end canWin(charToCheck, blocker, player)
+
+function canLose_or_Open(charToCheck, blocker, player)
+{
+	var winblockValue = -1; //-1 is false	
+	
+	for(var a=0; a < winningCombinations.length; a++)
+	{
+		var countCharToCheck = countChar(charToCheck, winningCombinations[a]);
+		var countBlocker = countChar(blocker, winningCombinations[a]);
+	
+		//alert("winning[a]"+winningCombinations[a]+"...check: "+countCharToCheck+" --- blocker"+countBlocker);
+
+		if( (countCharToCheck == 0) && (countBlocker == 2))
+		{//true: block player				
+			return winblockValue = getWinBlockValue(blocker, winningCombinations[a]);
+		}//end else if( (countCharToCheck == 0) && (countBlocker == 2) )						
+	}//for(var a=0; a < winningCombinations.length; a++)
+	
+	if(winblockValue = -1)
+	{//means there is an open move
+		return winblockValue = getOpenValue(charToCheck, blocker, winningCombinations);	
+	}//if(winblockValue = -1)
 	
 	return winblockValue;
 }//end canLose
@@ -201,6 +224,25 @@ function getWinBlockValue(remove, winnComboArr)
 	}//end for
 	
 	return val;
+}//end getWinBlockValue(remove, winnComboArr)
+
+function getOpenValue(remove1, remove2, winComboArr)
+{//return an random open value since win or block isn't possible
+	
+	var remainingVals = [];
+	for(var a=0; a < winComboArr.length; a++)
+	{
+		for(var b=0; b < winComboArr[b].length; b++)
+		{			
+			if(remove1 != winComboArr[a][b] && remove2 != winComboArr[a][b] && typeof winComboArr[a][b] != "undefined" && remainingVals.indexOf(winComboArr[a][b]) == -1)
+			{
+				remainingVals.push(winComboArr[a][b]); //add remaing open field #'s
+			}
+		}//end for(var b=0; b < winningCombinations.length; b++) 
+	}//end for(var a=0; a < winningCombinations.length; a++)
+	
+	return remainingVals[Math.floor(Math.random() * remainingVals.length)]; //return a random open number
+
 }//end getWinBlockValue(remove, winnComboArr)
 
 function updateWinningComboArray(selectedFieldObject)
