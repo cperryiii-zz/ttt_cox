@@ -54,18 +54,14 @@ function setupClickHandlers()
 	});
 }//end setupClickHandlers()
 
-function resetGlobals()
-{
-	winningCombinations  = [[0,1,2],
-					        [3,4,5],
-					        [6,7,8],
-					        [0,3,6],
-					        [1,4,7],
-					        [2,5,8],
-					        [0,4,8],
-					        [2,4,6],
-					        ]; //possible winning combinations
-}//resetGlobals
+function disableClickHandlers()
+{//disable clicks
+	
+	jQuery("td[id^="+gridSqaureIDName+"]").off("click", "", "", function()
+			{
+				xoPlacement(jQuery(this));
+			});
+}
 
 function xoPlacement(selectedFieldObject)
 {//method to place human and AI selection	
@@ -89,7 +85,7 @@ function xoPlacement(selectedFieldObject)
 		{
 			case aiChar:
 			{
-				setBottomMessage("Come on! You can't erase my move.");
+				setBottomMessage("Come on!<br>You can't erase my move.");
 				break;
 			}
 			case playerChar:
@@ -176,8 +172,9 @@ function canWin(charToCheck, blocker, player)
 		var countBlocker = countChar(blocker, winningCombinations[a]);
 
 		if( (countCharToCheck == 2) && (countBlocker == 0) )
-		{//true: beat player			
-			setBottomMessage("I win! Try your luck again?");
+		{//true: beat player
+			disableClickHandlers();
+			setBottomMessage("I win!<br>Try your luck again? <span id='playAgain' onclick=(resetGame())>Yes</span>");
 			return winblockValue = getWinBlockValue(charToCheck, winningCombinations[a]);
 			
 		}//end if( (countCharToCheck == 2) && (countBlocker == 0) )
@@ -262,13 +259,29 @@ function updateWinningComboArray(selectedFieldObject)
 
 function setBottomMessage(value)
 {//sets msg below the TTT grid
-	jQuery("#messages").text(value);
+	jQuery("#messages").html(value);
 }//setBottomMessage(value)
+
+
+//////////////////////////////////reset functions///////////////////////////////////
+
+function resetGlobals()
+{
+	winningCombinations  = [[0,1,2],
+					        [3,4,5],
+					        [6,7,8],
+					        [0,3,6],
+					        [1,4,7],
+					        [2,5,8],
+					        [0,4,8],
+					        [2,4,6],
+					        ]; //possible winning combinations
+}//resetGlobals
 
 function resetGrid()
 {
 	//will clear the grid of X's and O's
-	for(var a=0; jQuery("#mainGrid > td[id^="+gridSqaureIDName+"]").length; a++)
+	for(var a=0; a< jQuery("#mainGrid > td[id^="+gridSqaureIDName+"]").length; a++)
 	{
 		jQuery("#"+gridSqaureIDName+a).text("");
 	}//end for
@@ -282,4 +295,8 @@ function resetMsg()
 
 function resetGame()
 {
+	resetGrid();
+	resetMsg();
+	resetGlobals();
+	setupClickHandlers();
 }//end resetGame
