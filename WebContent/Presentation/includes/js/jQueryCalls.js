@@ -23,8 +23,6 @@ jQuery(document).ready(function()
 	setupTTTGrid();//setup 3x3 TTT grid
 	setupClickHandlers(); //creates clicking functionality for each square
 	
-	resetGloabls();
-	
 });//end jQuery(document).ready
 
 function setupTTTGrid()
@@ -76,8 +74,6 @@ function xoPlacement(selectedFieldObject)
 		
 		aiMove(selectedFieldObject);//determine AI's move
 		
-		isDraw(); //check if draw
-		
 	}//end if(cellText == "")
 	else
 	{		
@@ -127,22 +123,28 @@ function aiMove(selectedFieldObject)
 			winORblock = canLose_or_Open(aiChar, playerChar, "AI");
 		} //throw the block
 		
-		setGridTextVal(jQuery("#"+gridSqaureIDName+winORblock), aiChar); //set grid value
-	}//end else if(humanMoves > 1)
+		if(typeof winORblock != "undefined")
+		{
+			setGridTextVal(jQuery("#"+gridSqaureIDName+winORblock), aiChar); //set grid value
+		}
 			
+	}//end else if(humanMoves > 1)
+				
 }//end aiMove(selectedField)
 
 function isDraw()
-{//checks if there is a draw
+{//
+	/*
 	var mergedComb = "";
 	mergedComb = mergedComb.concat.apply(mergedComb, winningCombinations); //merge multi-arry for more efficient search
 	
 	var regExp = new RegExp("[0-9]","g");
 	var matchInts = mergedComb.toString().match(regExp); 
+	*/
+	disableClickHandlers();
+	setBottomMessage("Draw! <br>Play  again? <span id='playAgain' onclick=(resetGame())>Yes</span>");
 	
-//alert(matchInts);
-	
-}
+}//end isDraw()
 
 function countChar(charToCount, winnCommArr)
 {
@@ -201,7 +203,7 @@ function canLose_or_Open(charToCheck, blocker, player)
 			return winblockValue = getWinBlockValue(blocker, winningCombinations[a]);
 		}//end else if( (countCharToCheck == 0) && (countBlocker == 2) )						
 	}//for(var a=0; a < winningCombinations.length; a++)
-	
+
 	if(winblockValue = -1)
 	{//means there is an open move
 		return winblockValue = getOpenValue(charToCheck, blocker, winningCombinations);	
@@ -230,7 +232,7 @@ function getOpenValue(remove1, remove2, winComboArr)
 	for(var a=0; a < winComboArr.length; a++)
 	{
 		for(var b=0; b < winComboArr[b].length; b++)
-		{			
+		{	
 			if(remove1 != winComboArr[a][b] && remove2 != winComboArr[a][b] && typeof winComboArr[a][b] != "undefined" && remainingVals.indexOf(winComboArr[a][b]) == -1)
 			{
 				remainingVals.push(winComboArr[a][b]); //add remaing open field #'s
@@ -238,23 +240,28 @@ function getOpenValue(remove1, remove2, winComboArr)
 		}//end for(var b=0; b < winningCombinations.length; b++) 
 	}//end for(var a=0; a < winningCombinations.length; a++)
 	
+	if(remainingVals.length == 0)
+	{
+		isDraw();
+	}
+	
 	return remainingVals[Math.floor(Math.random() * remainingVals.length)]; //return a random open number
 
 }//end getWinBlockValue(remove, winnComboArr)
 
 function updateWinningComboArray(selectedFieldObject)
-{
+{	
 	for(var a=0; a < winningCombinations.length; a++)
 	{//loop through each winning combination to replace values w/ X or O
-		
 		var fieldNumValue = parseInt(selectedFieldObject.attr('id').replace(gridSqaureIDName,''));
 		
 		if(jQuery.inArray(fieldNumValue, winningCombinations[a]) != -1)
 		{//replace
 			var indexVal = winningCombinations[a].indexOf(fieldNumValue);
 			winningCombinations[a][indexVal] = selectedFieldObject.text();
-		}//end if		
+		}//end if
 	}//for(var a=0; a < winningCombinations.length; a++)
+		
 }//end 
 
 function setBottomMessage(value)
